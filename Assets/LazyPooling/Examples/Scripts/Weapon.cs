@@ -1,15 +1,15 @@
 using LazyPooling.Components;
 using UnityEngine;
 
-namespace LazyPooling.Examples
+namespace LazyPooling.Examples.Scripts
 {
     /// <summary>
-    /// Example weapon system showing how to spawn projectiles from pools.
-    /// Demonstrates high-frequency spawning patterns.
+    /// Example 2D weapon system showing how to spawn 2D bullets from pools.
+    /// Demonstrates high-frequency spawning patterns in a 2D context.
     /// </summary>
     public class Weapon : MonoBehaviour
     {
-        [Header("Weapon Settings")]
+        [Header("Weapon Settings (2D)")]
         [SerializeField]
         private float fireRate = 0.1f; // 10 shots per second
         
@@ -86,18 +86,21 @@ namespace LazyPooling.Examples
             var spawnPosition = muzzlePoint.position;
             var spawnRotation = muzzlePoint.rotation;
             
-            // Add spread
+            // Add spread (2D rotation is around Z-axis)
             var spread = Random.Range(-spreadAngle, spreadAngle);
-            spawnRotation *= Quaternion.Euler(0, spread, 0);
+            // Assuming muzzlePoint.rotation is already set for 2D (i.e., Z rotation is meaningful)
+            Quaternion finalRotation = spawnRotation * Quaternion.Euler(0, 0, spread);
             
-            // Spawn projectile from pool
-            var projectile = projectilePool.Spawn<Projectile>(spawnPosition, spawnRotation);
+            // Spawn Bullet2D from pool
+            var bullet = projectilePool.Spawn<Bullet2D>(spawnPosition, finalRotation);
             
-            if (projectile)
+            if (bullet)
             {
-                // Launch the projectile
-                var fireDirection = spawnRotation * Vector3.forward;
-                projectile.Launch(fireDirection * muzzleVelocity);
+                // Launch the Bullet2D
+                // In 2D, 'right' is often used as the forward vector if sprites are oriented that way.
+                // Or, use muzzlePoint.transform.right if the muzzlePoint is rotated to aim.
+                Vector2 fireDirection = finalRotation * Vector2.right; // Use Vector2.right for 2D forward
+                bullet.Launch(fireDirection * muzzleVelocity);
                 
                 // Play muzzle effects
                 PlayMuzzleEffects();
@@ -146,15 +149,16 @@ namespace LazyPooling.Examples
             {
                 var spawnPosition = muzzlePoint.position;
                 var angle = startAngle + (angleStep * i);
-                var spawnRotation = muzzlePoint.rotation * Quaternion.Euler(0, angle, 0);
+                // Assuming muzzlePoint.rotation is set for 2D base direction
+                var finalRotation = muzzlePoint.rotation * Quaternion.Euler(0, 0, angle); // 2D spread
                 
-                // Spawn projectile
-                var projectile = projectilePool.Spawn<Projectile>(spawnPosition, spawnRotation);
+                // Spawn Bullet2D
+                var bullet = projectilePool.Spawn<Bullet2D>(spawnPosition, finalRotation);
                 
-                if (projectile)
+                if (bullet)
                 {
-                    var fireDirection = spawnRotation * Vector3.forward;
-                    projectile.Launch(fireDirection * muzzleVelocity);
+                    Vector2 fireDirection = finalRotation * Vector2.right; // Use Vector2.right for 2D forward
+                    bullet.Launch(fireDirection * muzzleVelocity);
                 }
             }
             
@@ -162,23 +166,28 @@ namespace LazyPooling.Examples
         }
         
         /// <summary>
-        /// Fire projectile at a specific target.
+        /// Fire bullet at a specific 2D target.
         /// </summary>
         public void FireAtTarget(Transform target)
         {
             if (!projectilePool || !target) return;
             
-            var spawnPosition = muzzlePoint.position;
+            Vector2 spawnPosition = muzzlePoint.position; // Using Vector2 for positions
             
-            // Calculate the direction to target
-            var directionToTarget = (target.position - spawnPosition).normalized;
-            var spawnRotation = Quaternion.LookRotation(directionToTarget);
+            // Calculate the 2D direction to target
+            Vector2 directionToTarget = ((Vector2)target.position - spawnPosition).normalized;
             
-            // Spawn and launch
-            var projectile = projectilePool.Spawn<Projectile>(spawnPosition, spawnRotation);
-            if (projectile)
+            // For 2D, rotation is typically around the Z-axis
+            // Angle calculation:
+            float angle = Mathf.Atan2(directionToTarget.y, directionToTarget.x) * Mathf.Rad2Deg;
+            Quaternion spawnRotation = Quaternion.Euler(0, 0, angle);
+            
+            // Spawn and launch Bullet2D
+            var bullet = projectilePool.Spawn<Bullet2D>(spawnPosition, spawnRotation);
+            if (bullet)
             {
-                projectile.LaunchToward(target.position);
+                // LaunchToward expects a Vector2 target position for Bullet2D
+                bullet.LaunchToward((Vector2)target.position);
             }
         }
         
@@ -200,25 +209,26 @@ namespace LazyPooling.Examples
         }
         
         /// <summary>
-        /// Example of prewarming the projectile pool.
+        /// Example of prewarming the bullet pool.
         /// Call this during loading screens or setup.
         /// </summary>
-        [ContextMenu("Prewarm Projectile Pool")]
+        [ContextMenu("Prewarm Bullet Pool")] // Renamed ContextMenu
         public void PrewarmPool()
         {
             if (!projectilePool) return;
             
             // Spawn and immediately despawn to ensure pool is filled
+            // Spawning a generic GameObject and getting PoolableObject is okay for prewarming.
             for (var i = 0; i < 10; i++)
             {
-                var obj = projectilePool.Spawn();
-                if (obj)
+                var poolableObj = projectilePool.Spawn().GetComponent<PoolableObject>();
+                if (poolableObj)
                 {
-                    obj.ReturnToPool();
+                    poolableObj.ReturnToPool();
                 }
             }
             
-            Debug.Log("Projectile pool prewarmed");
+            Debug.Log("Bullet pool prewarmed");
         }
     }
 }

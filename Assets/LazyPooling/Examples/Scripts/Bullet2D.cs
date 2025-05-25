@@ -2,15 +2,15 @@ using UnityEngine;
 using System.Collections;
 using LazyPooling.Components;
 
-namespace LazyPooling.Examples
+namespace LazyPooling.Examples.Scripts
 {
     /// <summary>
-    /// Example projectile script showing automatic return to pool.
-    /// Demonstrates lifetime management and collision-based despawning.
+    /// Example 2D bullet script showing automatic return to pool.
+    /// Demonstrates lifetime management and collision-based despawning in a 2D context.
     /// </summary>
-    public class Projectile : MonoBehaviour
+    public class Bullet2D : MonoBehaviour // Renamed class
     {
-        [Header("Projectile Settings")]
+        [Header("Bullet Settings")] // Renamed header
         [SerializeField]
         private float speed = 20f;
         
@@ -22,10 +22,10 @@ namespace LazyPooling.Examples
         
         [Header("Components")]
         [SerializeField]
-        private Rigidbody rb;
+        private Rigidbody2D rb; // Changed to Rigidbody2D
         
         [SerializeField]
-        private TrailRenderer trailRenderer;
+        private TrailRenderer trailRenderer; // TrailRenderer can work in 2D with correct setup
         
         private PoolableObject poolable;
         private Coroutine lifetimeCoroutine;
@@ -34,7 +34,7 @@ namespace LazyPooling.Examples
         {
             // Get components if not assigned
             if (rb == null)
-                rb = GetComponent<Rigidbody>();
+                rb = GetComponent<Rigidbody2D>(); // Changed to GetComponent<Rigidbody2D>()
             
             if (trailRenderer == null)
                 trailRenderer = GetComponent<TrailRenderer>();
@@ -61,7 +61,7 @@ namespace LazyPooling.Examples
         }
         
         /// <summary>
-        /// Called when projectile is spawned from pool.
+        /// Called when bullet is spawned from pool.
         /// </summary>
         private void OnSpawnFromPool()
         {
@@ -74,8 +74,8 @@ namespace LazyPooling.Examples
             // Reset physics
             if (rb != null)
             {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
+                rb.velocity = Vector2.zero; // Changed to Vector2.zero for Rigidbody2D
+                rb.angularVelocity = 0f; // Rigidbody2D angularVelocity is a float
             }
             
             // Start lifetime countdown
@@ -83,7 +83,7 @@ namespace LazyPooling.Examples
         }
         
         /// <summary>
-        /// Called when projectile returns to pool.
+        /// Called when bullet returns to pool.
         /// </summary>
         private void OnReturnToPool()
         {
@@ -99,27 +99,27 @@ namespace LazyPooling.Examples
         }
         
         /// <summary>
-        /// Launch the projectile in a direction.
+        /// Launch the bullet in a 2D direction.
         /// </summary>
-        public void Launch(Vector3 direction)
+        public void Launch(Vector2 direction) // Changed parameter to Vector2
         {
             if (rb != null)
             {
-                rb.linearVelocity = direction.normalized * speed;
+                rb.velocity = direction.normalized * speed; // Rigidbody2D uses velocity
             }
         }
         
         /// <summary>
-        /// Launch the projectile toward a target position.
+        /// Launch the bullet toward a 2D target position.
         /// </summary>
-        public void LaunchToward(Vector3 targetPosition)
+        public void LaunchToward(Vector2 targetPosition) // Changed parameter to Vector2
         {
-            var direction = (targetPosition - transform.position).normalized;
+            var direction = (targetPosition - (Vector2)transform.position).normalized; // Ensure 2D context
             Launch(direction);
         }
         
         /// <summary>
-        /// Coroutine that returns projectile to pool after lifetime expires.
+        /// Coroutine that returns bullet to pool after lifetime expires.
         /// </summary>
         private IEnumerator LifetimeCountdown()
         {
@@ -128,22 +128,23 @@ namespace LazyPooling.Examples
         }
         
         /// <summary>
-        /// Handle collision with other objects.
+        /// Handle 2D collision with other objects.
         /// </summary>
-        private void OnCollisionEnter(Collision collision)
+        private void OnCollisionEnter2D(Collision2D collision) // Changed to OnCollisionEnter2D
         {
             // Check for enemy layer
+            // Ensure your 2D Enemy prefab is on the "Enemy" layer
             if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
             {
                 // Try to damage enemy
-                var enemy = collision.gameObject.GetComponent<Enemy>();
+                var enemy = collision.gameObject.GetComponent<Enemy2D>(); // Changed to Enemy2D
                 if (enemy != null)
                 {
                     enemy.TakeDamage(damage);
                 }
                 
                 // Play hit effect
-                PlayHitEffect(collision.contacts[0].point);
+                PlayHitEffect(collision.contacts[0].point); // contacts[0].point is Vector2 in 2D
             }
             
             // Return to pool after hitting anything
@@ -151,24 +152,27 @@ namespace LazyPooling.Examples
         }
         
         /// <summary>
-        /// Return this projectile to the pool.
+        /// Return this bullet to the pool.
         /// </summary>
         private void ReturnToPool()
         {
-            poolable.ReturnToPool();
+            if (poolable != null) // Add null check for safety
+            {
+                poolable.ReturnToPool();
+            }
         }
         
         /// <summary>
-        /// Play visual effect at hit location.
+        /// Play visual effect at 2D hit location.
         /// </summary>
-        private void PlayHitEffect(Vector3 position)
+        private void PlayHitEffect(Vector2 position) // Changed parameter to Vector2
         {
             // Example: Spawn hit effect from another pool
             /*
-            Pool effectPool = PoolManager.GetPool("HitEffectPool");
+            Pool effectPool = PoolManager.GetPool("HitEffectPool2D"); // Consider a 2D specific effect pool
             if (effectPool != null)
             {
-                effectPool.Spawn(position, Quaternion.identity);
+                effectPool.Spawn(position, Quaternion.identity); // Spawn at Vector2 position
             }
             */
         }
@@ -179,6 +183,11 @@ namespace LazyPooling.Examples
         private void ClearEffects()
         {
             // Reset any particle systems, audio, etc.
+            // For TrailRenderer, ensure it's reset if it persists across pool uses.
+            if (trailRenderer != null)
+            {
+                trailRenderer.Clear();
+            }
         }
     }
 }

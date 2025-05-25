@@ -3,15 +3,15 @@ using System.Collections;
 using LazyPooling.Components;
 using LazyPooling.Core;
 
-namespace LazyPooling.Examples
+namespace LazyPooling.Examples.Scripts
 {
     /// <summary>
-    /// Example spawner showing different ways to use the pooling system.
-    /// Demonstrates both direct pool reference and PoolManager lookup methods.
+    /// Example 2D spawner showing different ways to use the pooling system for 2D enemies.
+    /// Demonstrates both direct pool reference and PoolManager lookup methods in a 2D context.
     /// </summary>
     public class EnemySpawner : MonoBehaviour
     {
-        [Header("Direct Pool Reference (Recommended)")]
+        [Header("Direct Pool Reference (Recommended) - For Enemy2D")]
         [SerializeField]
         private Pool enemyPool;
         
@@ -75,16 +75,16 @@ namespace LazyPooling.Examples
             }
             
             // Get random spawn point
-            var spawnPosition = GetRandomSpawnPosition();
-            var spawnRotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
+            var spawnPosition = GetRandomSpawnPosition(); // Will ensure Z is 0
+            var spawnRotation = Quaternion.Euler(0, 0, Random.Range(0, 360f)); // 2D rotation
             
-            // Spawn enemy at position
-            var enemy = enemyPool.Spawn<Enemy>(spawnPosition, spawnRotation);
+            // Spawn Enemy2D at position
+            var enemy = enemyPool.Spawn<Enemy2D>(spawnPosition, spawnRotation); // Changed to Enemy2D
             
             if (enemy)
             {
                 // Configure the spawned enemy
-                ConfigureEnemy(enemy);
+                ConfigureEnemy(enemy); // Parameter type will be Enemy2D
             }
         }
         
@@ -104,16 +104,16 @@ namespace LazyPooling.Examples
             }
             
             // Get random spawn point
-            var spawnPosition = GetRandomSpawnPosition();
-            var spawnRotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
+            var spawnPosition = GetRandomSpawnPosition(); // Will ensure Z is 0
+            var spawnRotation = Quaternion.Euler(0, 0, Random.Range(0, 360f)); // 2D rotation
             
-            // Spawn enemy at position
-            var enemy = pool.Spawn<Enemy>(spawnPosition, spawnRotation);
+            // Spawn Enemy2D at position
+            var enemy = pool.Spawn<Enemy2D>(spawnPosition, spawnRotation); // Changed to Enemy2D
             
             if (enemy)
             {
                 // Configure the spawned enemy
-                ConfigureEnemy(enemy);
+                ConfigureEnemy(enemy); // Parameter type will be Enemy2D
             }
         }
         
@@ -139,33 +139,42 @@ namespace LazyPooling.Examples
         {
             for (var i = 0; i < enemyCount; i++)
             {
-                var position = GetRandomSpawnPosition();
+                var position = GetRandomSpawnPosition(); // Will ensure Z is 0
                 var angle = (360f / enemyCount) * i;
-                var rotation = Quaternion.Euler(0, angle, 0);
+                var rotation = Quaternion.Euler(0, 0, angle); // 2D rotation
                 
+                // Spawning Enemy2D implicitly here if enemyPool is configured for Enemy2D prefabs
                 enemyPool.Spawn(position, rotation);
             }
         }
         
         /// <summary>
-        /// Gets a random spawn position from configured spawn points.
+        /// Gets a random spawn position from configured spawn points, ensuring Z is 0 for 2D.
         /// </summary>
         private Vector3 GetRandomSpawnPosition()
         {
-            if (spawnPoints is not { Length: > 0 }) return transform.position;
-            var spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
-            return spawnPoint ? spawnPoint.position : transform.position;
-
+            Vector3 position;
+            if (spawnPoints is not { Length: > 0 })
+            {
+                position = transform.position;
+            }
+            else
+            {
+                var spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+                position = spawnPoint ? spawnPoint.position : transform.position;
+            }
+            position.z = 0; // Ensure Z is 0 for 2D
+            return position;
             // Default to spawner position if no spawn points
         }
         
         /// <summary>
-        /// Configure the spawned enemy with any additional setup.
+        /// Configure the spawned 2D enemy with any additional setup.
         /// </summary>
-        private void ConfigureEnemy(Enemy enemy)
+        private void ConfigureEnemy(Enemy2D enemy) // Changed parameter type to Enemy2D
         {
             // Example: Set target, add to an enemy list, etc.
-            // enemy.SetTarget(player);
+            // enemy.SetTarget(player); // Assuming player is Vector2 or player.transform
             // enemyManager.RegisterEnemy(enemy);
         }
         

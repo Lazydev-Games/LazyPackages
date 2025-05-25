@@ -1,13 +1,13 @@
 using LazyPooling.Components;
 using UnityEngine;
 
-namespace LazyPooling.Examples
+namespace LazyPooling.Examples.Scripts
 {
     /// <summary>
-    /// Example enemy script showing how to subscribe to pooling events.
-    /// Demonstrates proper initialization and cleanup patterns.
+    /// Example 2D enemy script showing how to subscribe to pooling events.
+    /// Demonstrates proper initialization and cleanup patterns in a 2D context.
     /// </summary>
-    public class Enemy : MonoBehaviour
+    public class Enemy2D : MonoBehaviour // Renamed class
     {
         [SerializeField]
         private int maxHealth = 100;
@@ -125,11 +125,26 @@ namespace LazyPooling.Examples
         
         private System.Collections.IEnumerator AIBehavior()
         {
+            // Example: Simple 2D movement (e.g., move right)
+            // For more complex behavior, you'd typically use Rigidbody2D.velocity or a pathfinding system.
+            float moveDirection = Random.Range(0, 2) == 0 ? -1f : 1f; // Randomly move left or right
+            Vector2 movement = new Vector2(moveDirection, 0f);
+
             while (true)
             {
-                // Simple AI behavior
-                yield return new WaitForSeconds(1f);
-                // Move, attack, etc.
+                // Move the enemy
+                if (moveSpeed > 0) // Ensure there's a speed set
+                {
+                    transform.Translate(movement * moveSpeed * Time.deltaTime);
+                }
+                
+                // Example: Flip direction if hitting a boundary (pseudo-code)
+                // if (transform.position.x > 10f || transform.position.x < -10f)
+                // {
+                //     movement *= -1; // Reverse direction
+                // }
+
+                yield return null; // Wait for the next frame to continue movement
             }
         }
         
