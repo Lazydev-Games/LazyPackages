@@ -444,4 +444,3 @@ Monitor these warnings during gameplay to identify pools that are too small.
 ---
 
 Happy Pooling!
-```
